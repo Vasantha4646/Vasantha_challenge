@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Scalable Static Website on AWS
+
+Parameters:
+  WebsiteDomainName:
+    Type: String
+    Description: Domain name for your website (e.g., example.com)
+
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt WebsiteBucket.DomainName
+            Id: WebsiteOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: WebsiteOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: none
+        Comment: CloudFront distribution for the static website
+        Enabled: true
+        Aliases:
+          - !Ref WebsiteDomainName
+        DefaultRootObject: index.html
+        HttpVersion: http2
+
+Outputs:
+  WebsiteURL:
+    Description: URL of the static website.
+    Value: !Join ['', ['https://', !Ref WebsiteDomainName]]
